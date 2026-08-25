@@ -1,0 +1,62 @@
+# This file makes the tender monitor run automatically, every 2 hours,
+# forever, for free, without needing your computer on at all.
+#
+# HOW THIS WORKS (no coding knowledge needed to use it):
+# GitHub runs this on their own computers, on the schedule below. It checks
+# PRAZ, and if it finds a new matching tender, emails you. That's it.
+#
+# SETUP (do this once, in GitHub's website — no terminal needed):
+#   1. Create a free GitHub account if you don't have one (github.com)
+#   2. Create a new repository (just a project folder on GitHub), e.g. "praz-monitor"
+#   3. Upload monitor.py, config.py, and this whole .github folder into it
+#   4. Go to the repository's Settings -> Secrets and variables -> Actions
+#   5. Add three secrets (click "New repository secret" for each):
+#        ALERT_EMAIL_FROM         = your Gmail address
+#        ALERT_EMAIL_APP_PASSWORD = a Gmail "app password" (see note below)
+#        ALERT_EMAIL_TO           = where you want alerts sent (can be same address)
+#   6. That's it — it starts running automatically on the schedule below.
+#
+# GMAIL APP PASSWORD: Gmail won't let scripts log in with your real password.
+# Go to myaccount.google.com/apppasswords, generate one labelled "PRAZ Monitor",
+# and use that 16-character code as ALERT_EMAIL_APP_PASSWORD. If you don't see
+# that option, you may need to enable 2-Step Verification on the Gmail account
+# first (Google requires this before it will issue app passwords).
+#
+# If any of this setup is confusing, this is exactly the kind of thing to
+# hand to Claude Code with: "help me set up this repository on GitHub and
+# add these secrets" — it can walk you through every click.
+
+name: PRAZ Tender Monitor
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"   # every 2 hours, all day, every day
+  workflow_dispatch:         # also lets you trigger it manually from GitHub's website, anytime
+
+jobs:
+  check-for-new-tenders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 lxml
+
+      - name: Run the monitor
+        env:
+          ALERT_EMAIL_FROM: ${{ secrets.ALERT_EMAIL_FROM }}
+          ALERT_EMAIL_APP_PASSWORD: ${{ secrets.ALERT_EMAIL_APP_PASSWORD }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+        run: python monitor.py
+
+      - name: Save tracking state
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update seen tender IDs"
+          file_pattern: seen_tender_ids.json
