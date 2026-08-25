@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wingu.Network — Procurement Intelligence</title>
+<style>
+  :root{
+    --navy:#092952; --navy-soft:#3A4E6B;
+    --green:#2FA127; --green-bg:#E9F6E7;
+    --amber:#C98A2E; --amber-bg:#FBF1E2;
+    --slate:#6B7280; --slate-bg:#F0F1F3;
+    --blue:#3B6FA0; --blue-bg:#EAF1F8;
+    --red:#C0392B; --red-bg:#FBEAE8;
+    --bg:#F7F7F5; --surface:#FFFFFF; --border:#E3E3DF;
+    --text:#1C2430; --text-soft:#5B6472; --text-mute:#8A9099;
+    --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font-family:var(--sans); padding:0 0 3rem;}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 20px;}
+
+  header{background:var(--navy); color:#fff; padding:26px 0 20px;}
+  .brand{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+  .brand-mark{font-weight:800; font-size:20px; letter-spacing:-0.02em;}
+  .brand-mark span{color:var(--green);}
+  .brand-date{font-family:var(--mono); font-size:11.5px; color:#B9C4D6;}
+  h1{font-size:24px; font-weight:800; letter-spacing:-0.02em; margin-top:10px;}
+  .subhead{color:#B9C4D6; font-size:13.5px; margin-top:4px;}
+
+  .tabs{display:flex; gap:4px; margin:20px 0 16px; border-bottom:1px solid var(--border); flex-wrap:wrap;}
+  .tab{font-weight:700; font-size:13.5px; padding:9px 14px; cursor:pointer; color:var(--text-soft);
+       border-bottom:2px solid transparent; background:none; border-top:none; border-left:none; border-right:none;}
+  .tab.active{color:var(--navy); border-bottom-color:var(--green);}
+
+  .view{display:none;} .view.active{display:block;}
+
+  .summary-row{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px;}
+  .stat{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:11px 13px;}
+  .stat-label{font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-soft); font-weight:700;}
+  .stat-value{font-family:var(--mono); font-size:22px; font-weight:700; color:var(--navy); margin-top:2px;}
+
+  .src-box{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:18px;}
+  .src-row{display:grid; grid-template-columns: 16px 1fr 90px 140px; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);}
+  .src-row:last-child{border-bottom:none;}
+  .src-dot{width:9px; height:9px; border-radius:50%;}
+  .src-dot.on{background:var(--green);} .src-dot.off{background:var(--slate);}
+  .src-name{font-size:13px; font-weight:700;}
+  .src-desc{font-size:11.5px; color:var(--text-soft); margin-top:1px;}
+  .src-count{font-family:var(--mono); font-size:12px; color:var(--navy); text-align:right;}
+  .src-url{font-family:var(--mono); font-size:11px; width:100%; padding:5px 7px; border:1px solid var(--border); border-radius:5px; background:var(--bg); color:var(--text-soft);}
+  .refresh-btn{font-weight:700; font-size:12.5px; color:#fff; background:var(--navy); border:none; border-radius:6px; padding:9px 16px; cursor:pointer; margin-top:10px;}
+  .refresh-btn:hover{background:var(--navy-soft);}
+  .note{font-size:11.5px; color:var(--text-soft); line-height:1.5; margin-top:8px; padding:8px 10px; background:var(--amber-bg); border-radius:6px;}
+
+  .tier-block{margin-bottom:22px;}
+  .tier-head{display:flex; align-items:center; gap:10px; margin-bottom:2px;}
+  .tier-dot{width:10px; height:10px; border-radius:50%;}
+  .tier-title{font-weight:800; font-size:14.5px;}
+  .tier-desc{font-size:12px; color:var(--text-soft); margin-bottom:9px;}
+
+  .col-head{display:grid; grid-template-columns: 26px 1fr 80px 130px 20px; gap:10px; padding:0 10px; margin-bottom:5px;}
+  .col-head span{font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-mute); font-weight:700;}
+  .col-head span:nth-child(3){text-align:right;}
+
+  .erow{background:var(--surface); border:1px solid var(--border); border-left-width:4px; margin-bottom:4px; border-radius:0 6px 6px 0; cursor:pointer;}
+  .erow-main{display:grid; grid-template-columns: 26px 1fr 80px 130px 20px; align-items:center; gap:10px; padding:8px 10px;}
+  .erow.t1{border-left-color:var(--green);} .erow.t2{border-left-color:var(--amber);}
+  .erow.t3{border-left-color:var(--slate);} .erow.t4{border-left-color:var(--blue);}
+  .rank{font-family:var(--mono); font-size:11px; color:var(--text-mute); font-weight:700;}
+  .ename{font-size:13px; font-weight:600;}
+  .ecount{font-family:var(--mono); font-size:12.5px; text-align:right; color:var(--navy); font-weight:700;}
+  .fitwrap{display:flex; align-items:center; gap:7px;}
+  .fitbar{flex:1; height:6px; background:var(--slate-bg); border-radius:3px; overflow:hidden;}
+  .fitfill{height:100%; border-radius:3px;}
+  .t1 .fitfill{background:var(--green);} .t2 .fitfill{background:var(--amber);} .t3 .fitfill{background:var(--slate);}
+  .fitpct{font-family:var(--mono); font-size:11px; color:var(--text-soft); min-width:30px; text-align:right;}
+  .chev{font-size:11px; color:var(--text-mute); transition:transform 0.15s;}
+  .erow.open .chev{transform:rotate(90deg);}
+
+  .edetail{display:none; padding:0 12px 12px; border-top:1px solid var(--border); margin-top:2px;}
+  .erow.open .edetail{display:block;}
+  .edetail-item{display:grid; grid-template-columns:1fr 90px 78px; gap:8px; align-items:center; padding:6px 4px; border-bottom:1px solid var(--border); font-size:12px;}
+  .edetail-item:last-child{border-bottom:none;}
+  .edetail-title{color:var(--text);}
+  .edetail-cat{font-size:10px; color:var(--text-mute); margin-top:1px;}
+  .edetail-date{font-family:var(--mono); font-size:11px; color:var(--text-soft); text-align:right;}
+  .status-pill{font-family:var(--mono); font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:8px; text-align:center;}
+  .status-closed{background:var(--slate-bg); color:var(--slate);}
+  .status-failed{background:var(--red-bg); color:var(--red);}
+  .status-open{background:var(--green-bg); color:#1F7A19;}
+  .edetail-empty{font-size:12px; color:var(--text-mute); padding:10px 4px;}
+  .edetail-loading{font-size:12px; color:var(--text-mute); padding:10px 4px;}
+
+  .me-group{margin-bottom:20px;}
+  .me-group-head{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+  .me-badge{font-family:var(--mono); font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px; text-transform:uppercase;}
+  .me-badge.anchor{background:var(--green-bg); color:#1F7A19;}
+  .me-badge.vertical{background:var(--blue-bg); color:var(--blue);}
+  .me-badge.longtail{background:var(--slate-bg); color:var(--slate);}
+  .me-group-title{font-weight:800; font-size:14px;}
+  .me-group-desc{font-size:11.5px; color:var(--text-soft); margin-bottom:8px;}
+
+  .feed-card{display:grid; grid-template-columns:1fr 110px; gap:10px; align-items:center;
+    background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--slate);
+    border-radius:0 6px 6px 0; padding:9px 11px; margin-bottom:5px;}
+  .feed-card.match{border-left-color:var(--green);}
+  .feed-title{font-size:12.5px; font-weight:600;}
+  .feed-entity{font-size:11px; color:var(--text-soft); margin-top:1px;}
+  .feed-badge{font-family:var(--mono); font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:4px;
+    background:var(--green-bg); color:#1F7A19; display:inline-block; margin-top:3px;}
+  .feed-date{font-family:var(--mono); font-size:11.5px; text-align:right; color:var(--navy);}
+  .feed-empty{font-size:12.5px; color:var(--text-mute); padding:16px 12px; text-align:center; border:1px dashed var(--border); border-radius:8px;}
+
+  footer{margin-top:26px; padding-top:12px; border-top:1px solid var(--border); font-size:11px; color:var(--text-mute); font-family:var(--mono);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <div class="brand-mark">wingu<span>.</span>network</div>
+      <div class="brand-date" id="header-time">—</div>
+    </div>
+    <h1>Procurement intelligence</h1>
+    <div class="subhead">Live from your Google Sheets. Click any entity to see the tenders behind the number.</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="showView('national')" id="tab-national">National</button>
+    <button class="tab" onclick="showView('me')" id="tab-me">Mashonaland East</button>
+    <button class="tab" onclick="showView('feed')" id="tab-feed">Newsfeed</button>
+    <button class="tab" onclick="showView('sources')" id="tab-sources">Data sources</button>
+  </div>
+
+  <div class="view active" id="view-national">
+    <div class="summary-row">
+      <div class="stat"><div class="stat-label">Entities ranked</div><div class="stat-value" id="nat-count">—</div></div>
+      <div class="stat"><div class="stat-label">Tier 1 targets</div><div class="stat-value" id="nat-t1count">—</div></div>
+      <div class="stat"><div class="stat-label">Tenders loaded</div><div class="stat-value" id="nat-total">—</div></div>
+      <div class="stat"><div class="stat-label">Top niche fit</div><div class="stat-value" id="nat-topfit">—</div></div>
+    </div>
+    <div id="national-tiers">Loading data from Google Sheets…</div>
+  </div>
+
+  <div class="view" id="view-me">
+    <div class="summary-row">
+      <div class="stat"><div class="stat-label">Entities mapped</div><div class="stat-value">24</div></div>
+      <div class="stat"><div class="stat-label">Full-category anchors</div><div class="stat-value">2</div></div>
+      <div class="stat"><div class="stat-label">Health vertical</div><div class="stat-value">8</div></div>
+      <div class="stat"><div class="stat-label">Territory coverage</div><div class="stat-value">14</div></div>
+    </div>
+    <div id="me-groups">Loading…</div>
+  </div>
+
+  <div class="view" id="view-feed">
+    <div class="summary-row">
+      <div class="stat"><div class="stat-label">Active now</div><div class="stat-value" id="feed-active-count">0</div></div>
+      <div class="stat"><div class="stat-label">Upcoming (logged)</div><div class="stat-value" id="feed-upcoming-count">5</div></div>
+      <div class="stat"><div class="stat-label">Closing this week</div><div class="stat-value" id="feed-soon-count">0</div></div>
+      <div class="stat"><div class="stat-label">Niche matches</div><div class="stat-value" id="feed-match-count">0</div></div>
+    </div>
+    <div class="tier-block">
+      <div class="tier-head"><span class="tier-dot" style="background:var(--green)"></span><span class="tier-title">Active now</span></div>
+      <div class="tier-desc">From your loaded tender sheet — entries with no recorded outcome yet.</div>
+      <div id="feed-active"></div>
+    </div>
+    <div class="tier-block">
+      <div class="tier-head"><span class="tier-dot" style="background:var(--blue)"></span><span class="tier-title">Upcoming — from Annual Procurement Plans</span></div>
+      <div class="tier-desc">Manually confirmed forecast items. Connect a live APP-by-entity sheet in Data sources to automate this.</div>
+      <div id="feed-upcoming"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-sources">
+    <div class="src-box">
+      <div class="src-row">
+        <span class="src-dot" id="dot-tenders">●</span>
+        <div><div class="src-name">Tender register</div><div class="src-desc">Every tender: title, entity, category, dates, status. Powers National, Mashonaland East, and Active feed.</div></div>
+        <div class="src-count" id="count-tenders">—</div>
+        <input class="src-url" id="url-tenders" value="">
+      </div>
+      <div class="src-row">
+        <span class="src-dot off" id="dot-appindex">●</span>
+        <div><div class="src-name">APP entity/year index</div><div class="src-desc">Which entities have filed a plan, which years. Confirms coverage, not line items yet.</div></div>
+        <div class="src-count" id="count-appindex">—</div>
+        <input class="src-url" id="url-appindex" value="">
+      </div>
+      <div class="src-row">
+        <span class="src-dot off" id="dot-former">●</span>
+        <div><div class="src-name">Former opportunities (historical archive)</div><div class="src-desc">Not yet connected. Paste a published Google Sheet CSV link once you've exported it.</div></div>
+        <div class="src-count" id="count-former">not connected</div>
+        <input class="src-url" id="url-former" placeholder="paste published CSV link here">
+      </div>
+      <div class="src-row">
+        <span class="src-dot off" id="dot-awards">●</span>
+        <div><div class="src-name">Awarded tender index</div><div class="src-desc">Not yet connected — see note below for how to bridge your PDF folder in.</div></div>
+        <div class="src-count" id="count-awards">not connected</div>
+        <input class="src-url" id="url-awards" placeholder="paste published CSV link here">
+      </div>
+      <button class="refresh-btn" onclick="loadAllSources()">Refresh all sources</button>
+      <div class="note">
+        <b>Connecting your award PDF folder:</b> a static dashboard can't read files straight off your computer.
+        The bridge is a small index sheet — one row per PDF with columns Tender Id, Awardee, Contract Amount, Award Date, PDF filename.
+        Log each PDF into that sheet (manually for now, or later via the OCR pipeline we discussed), publish it to web as CSV,
+        and paste the link above. Once connected, any tender you drill into that has a matching Tender Id will show the real
+        award outcome and price alongside it.
+      </div>
+    </div>
+  </div>
+
+  <footer id="footer-status">Loading…</footer>
+</div>
+
+<script>
+const CFG = {
+  tenders: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSGzkag08KCrX7I55m_pxQiVpIGqjLiVfjoW_4edMt-ZORfwIqA11jJO4gMVRsWk9rg_3CfMz14uiln/pub?output=csv",
+  appindex: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcNtElfKy37Oxb9I_KpIWlYW49vWBHLMRAI6M8ieKfLKwl1wEIMhhEAHPDZNYwI0fW6oG32Pvsy1_E/pub?output=csv",
+  former: "",
+  awards: ""
+};
+document.getElementById('url-tenders').value = CFG.tenders;
+document.getElementById('url-appindex').value = CFG.appindex;
+
+const NICHE_KEYWORDS = ['network','wifi','wi-fi','fibre','fiber','lan ','switch','router','access point','starlink',
+  'server','storage','data center','datacenter','ssd','san ','pdu','firewall','antivirus','cctv','security',
+  'surveillance','biometric','access control','software','licence','license','sap','microsoft','saas','sd wan',
+  'sd-wan','cloud','wan ','voip','pabx','ict'];
+const COMMODITY_KEYWORDS = ['printer','toner','cartridge','catridge','printing','laptop','desktop','computer',
+  'cellphone','phone','tablet','ipad','samsung galaxy','camera','video conferenc','screen','tv'];
+
+const ME_ENTITIES = ["MUNICIPALITY OF MARONDERA","HWEDZA RURAL DISTRICT COUNCIL","PROVINCIAL MEDICAL DIRECTORATE MASHONALAND EAST",
+  "MUTAWATAWA DISTRICT HOSPITAL","SADZA DISTRICT HOSPITAL","KOTWA DISTRICT HOSPITAL","MAHUSEKWA DISTRICT HOSPITAL",
+  "MAKUMBE DISTRICT HOSPITAL","SEKE DISTRICT HOSPITAL","WEDZA DISTRICT HOSPITAL","CHIKOMBA RURAL DISTRICT COUNCIL",
+  "GOROMONZI RURAL DISTRICT COUNCIL","MUREWA RURAL DISTRICT COUNCIL","MUREWA DISTRICT HOSPITAL","MUTOKO RURAL DISTRICT COUNCIL",
+  "MUTOKO DISTRICT HOSPITAL","RUWA LOCAL BOARD","CHIVHU GENERAL HOSPITAL","KUSHINGA PHIKELELA POLYTECHNIC",
+  "UPPER MANYAME SUBCATCHMENT COUNCIL","UMP ZVATAIDA RURAL DISTRICT COUNCIL",
+  "MARONDERA UNIVERSITY OF AGRICULTURAL SCIENCES AND TECHNOLOGY","SEKE TEACHERS","MARONDERA PROVINCIAL HOSPITAL"];
+const ME_ANCHORS = ["MUNICIPALITY OF MARONDERA","HWEDZA RURAL DISTRICT COUNCIL"];
+const ME_VERTICAL = ["PROVINCIAL MEDICAL DIRECTORATE MASHONALAND EAST","MUTAWATAWA DISTRICT HOSPITAL","SADZA DISTRICT HOSPITAL",
+  "KOTWA DISTRICT HOSPITAL","MAHUSEKWA DISTRICT HOSPITAL","MAKUMBE DISTRICT HOSPITAL","SEKE DISTRICT HOSPITAL","WEDZA DISTRICT HOSPITAL"];
+
+let upcomingTenders = [
+  {title:"Farmercard/Efis License", entity:"Grain Marketing Board", date:"06-Oct-2026"},
+  {title:"UPS Batteries (qty 50)", entity:"Grain Marketing Board", date:"17-Oct-2026"},
+  {title:"Antivirus License", entity:"Grain Marketing Board", date:"20-Oct-2026"},
+  {title:"TeamViewer License", entity:"Grain Marketing Board", date:"22-Oct-2026"},
+  {title:"ICT equipment and cellphones (qty 40)", entity:"Murewa Rural District Council", date:"10-Nov-2026"},
+];
+
+let allTenders = [];
+let byEntity = {};
+
+function parseCSV(text){
+  const rows = []; let row = []; let field = ''; let inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i], next = text[i+1];
+    if(inQuotes){
+      if(c === '"' && next === '"'){ field += '"'; i++; }
+      else if(c === '"'){ inQuotes = false; }
+      else { field += c; }
+    } else {
+      if(c === '"'){ inQuotes = true; }
+      else if(c === ','){ row.push(field); field=''; }
+      else if(c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else if(c === '\r'){ }
+      else { field += c; }
+    }
+  }
+  if(field.length>0 || row.length>0){ row.push(field); rows.push(row); }
+  if(rows.length===0) return [];
+  const headers = rows[0].map(h=>h.trim());
+  return rows.slice(1).filter(r=>r.length>1).map(r=>{
+    const obj = {}; headers.forEach((h,i)=>obj[h]=(r[i]||'').trim()); return obj;
+  });
+}
+
+function isNiche(title){
+  const t=(title||'').toLowerCase();
+  return NICHE_KEYWORDS.some(k=>t.includes(k));
+}
+function isCommodity(title){
+  const t=(title||'').toLowerCase();
+  return COMMODITY_KEYWORDS.some(k=>t.includes(k));
+}
+function norm(s){ return (s||'').trim().toUpperCase().replace(/\s+/g,' '); }
+
+async function fetchCSV(url){
+  const resp = await fetch(url);
+  if(!resp.ok) throw new Error('fetch failed: '+resp.status);
+  const text = await resp.text();
+  return parseCSV(text);
+}
+
+async function loadAllSources(){
+  document.getElementById('footer-status').textContent = 'Loading…';
+  CFG.tenders = document.getElementById('url-tenders').value;
+  CFG.appindex = document.getElementById('url-appindex').value;
+  CFG.former = document.getElementById('url-former').value;
+  CFG.awards = document.getElementById('url-awards').value;
+
+  try{
+    allTenders = await fetchCSV(CFG.tenders);
+    setSrcStatus('tenders', true, allTenders.length + ' rows');
+  }catch(e){
+    setSrcStatus('tenders', false, 'fetch failed');
+    document.getElementById('national-tiers').innerHTML = '<div class="feed-empty">Could not load the tender sheet. Check the URL in Data sources, or your sheet may not be published to web (File → Share → Publish to web → CSV).</div>';
+    return;
+  }
+
+  if(CFG.former){
+    try{ const f = await fetchCSV(CFG.former); allTenders = allTenders.concat(f); setSrcStatus('former', true, f.length+' rows'); }
+    catch(e){ setSrcStatus('former', false, 'fetch failed'); }
+  }
+
+  try{
+    const idx = await fetchCSV(CFG.appindex);
+    setSrcStatus('appindex', true, idx.length + ' rows');
+  }catch(e){ setSrcStatus('appindex', false, 'fetch failed'); }
+
+  if(CFG.awards){
+    try{ const a = await fetchCSV(CFG.awards); setSrcStatus('awards', true, a.length+' rows'); }
+    catch(e){ setSrcStatus('awards', false, 'fetch failed'); }
+  }
+
+  buildIndex();
+  renderNational();
+  renderME();
+  renderFeed();
+  document.getElementById('header-time').textContent = 'REFRESHED ' + new Date().toLocaleString().toUpperCase();
+  document.getElementById('footer-status').textContent = allTenders.length + ' tenders loaded · ' + Object.keys(byEntity).length + ' entities';
+}
+
+function setSrcStatus(key, ok, countText){
+  document.getElementById('dot-'+key).className = 'src-dot ' + (ok?'on':'off');
+  document.getElementById('count-'+key).textContent = countText;
+}
+
+function buildIndex(){
+  byEntity = {};
+  allTenders.forEach(t=>{
+    const e = norm(t['Procuring Entity']);
+    if(!e) return;
+    if(!byEntity[e]) byEntity[e] = [];
+    byEntity[e].push(t);
+  });
+}
+
+function tierOf(total, nichePct){
+  if(total>=15 && nichePct>=45) return 't1';
+  if(nichePct>=55) return 't2';
+  return 't3';
+}
+function tierMeta(tier){
+  return {
+    t1:{color:'var(--green)', title:'Tier 1 — Framework agreement targets', desc:'High volume and high niche fit. Pursue standing contracts.'},
+    t2:{color:'var(--amber)', title:'Tier 2 — High-conversion specialists', desc:'Lower volume, exceptional fit. Low effort, high conversion.'},
+    t3:{color:'var(--slate)', title:'Tier 3 — Volume without fit', desc:'Big buyers, mostly commodity. Reactive coverage only.'}
+  }[tier];
+}
+
+function computeRanking(entityWhitelist){
+  const entries = Object.keys(byEntity)
+    .filter(e => !entityWhitelist || entityWhitelist.includes(e))
+    .map(e=>{
+      const list = byEntity[e];
+      const niche = list.filter(t=>isNiche(t['Notice Title'])).length;
+      const pct = list.length ? Math.round(niche/list.length*100) : 0;
+      return {name:e, total:list.length, nichePct:pct};
+    })
+    .sort((a,b)=>b.total-a.total);
+  return entries;
+}
+
+function renderEntityRow(entry, rank, tier){
+  const id = 'erow-'+rank+'-'+entry.name.replace(/[^A-Z0-9]/g,'');
+  return `<div class="erow ${tier}" id="${id}">
+    <div class="erow-main" onclick="toggleRow('${id}','${entry.name.replace(/'/g,"\\'")}')">
+      <div class="rank">${String(rank).padStart(2,'0')}</div>
+      <div class="ename">${titleCase(entry.name)}</div>
+      <div class="ecount">${entry.total}</div>
+      <div class="fitwrap"><div class="fitbar"><div class="fitfill" style="width:${entry.nichePct}%"></div></div><div class="fitpct">${entry.nichePct}%</div></div>
+      <div class="chev">▶</div>
+    </div>
+    <div class="edetail" id="detail-${id}"><div class="edetail-loading">Loading tenders…</div></div>
+  </div>`;
+}
+
+function titleCase(s){
+  return s.toLowerCase().replace(/\b\w/g, c=>c.toUpperCase())
+    .replace(/\bAfc\b/,'AFC').replace(/\bZimra\b/,'ZIMRA').replace(/\bZesa\b/,'ZESA')
+    .replace(/\bPosb\b/,'POSB').replace(/\bIct\b/,'ICT').replace(/\bUmp\b/,'UMP');
+}
+
+function toggleRow(id, entityName){
+  const row = document.getElementById(id);
+  const wasOpen = row.classList.contains('open');
+  row.classList.toggle('open');
+  if(!wasOpen){
+    const detailEl = document.getElementById('detail-'+id);
+    const list = (byEntity[entityName]||[]).sort((a,b)=>(a['Publish Date']>b['Publish Date']?-1:1));
+    if(list.length===0){
+      detailEl.innerHTML = '<div class="edetail-empty">No tenders found for this entity in the loaded sheet.</div>';
+      return;
+    }
+    detailEl.innerHTML = list.map(t=>{
+      const status = (t['Status']||'').toLowerCase();
+      const pillClass = status.includes('fail') ? 'status-failed' : status.includes('clos') ? 'status-closed' : 'status-open';
+      const pillText = t['Status'] || 'Open';
+      const niche = isNiche(t['Notice Title']);
+      return `<div class="edetail-item">
+        <div><div class="edetail-title">${t['Notice Title']||'Untitled'}</div>
+          <div class="edetail-cat">${(t['Class of Procurement']||'')} ${niche?'· NICHE':''}</div></div>
+        <div class="edetail-date">${t['Publish Date']||''}</div>
+        <div style="text-align:right;"><span class="status-pill ${pillClass}">${pillText}</span></div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function renderNational(){
+  const ranked = computeRanking(null).slice(0,25);
+  const t1 = ranked.filter(e=>tierOf(e.total,e.nichePct)==='t1');
+  const t2 = ranked.filter(e=>tierOf(e.total,e.nichePct)==='t2');
+  const t3 = ranked.filter(e=>tierOf(e.total,e.nichePct)==='t3');
+
+  let html = '';
+  [['t1',t1],['t2',t2],['t3',t3]].forEach(([tier,list])=>{
+    if(list.length===0) return;
+    const meta = tierMeta(tier);
+    html += `<div class="tier-block">
+      <div class="tier-head"><span class="tier-dot" style="background:${meta.color}"></span><span class="tier-title">${meta.title}</span></div>
+      <div class="tier-desc">${meta.desc}</div>
+      <div class="col-head"><span>#</span><span>Entity</span><span>Tenders</span><span>Niche fit</span><span></span></div>
+      ${list.map((e,i)=>renderEntityRow(e,i+1,tier)).join('')}
+    </div>`;
+  });
+  document.getElementById('national-tiers').innerHTML = html;
+
+  document.getElementById('nat-count').textContent = ranked.length;
+  document.getElementById('nat-t1count').textContent = t1.length;
+  document.getElementById('nat-total').textContent = allTenders.length;
+  document.getElementById('nat-topfit').textContent = ranked.length ? Math.max(...ranked.map(e=>e.nichePct))+'%' : '—';
+}
+
+function renderME(){
+  const ranked = computeRanking(ME_ENTITIES);
+  const rankedNames = ranked.map(r=>r.name);
+  const groups = [
+    ['anchor','Anchor','Full-category ownership targets','Win every category here.',ME_ANCHORS],
+    ['vertical','Vertical','Healthcare cluster','Reachable through the Provincial Medical Directorate.',ME_VERTICAL],
+    ['longtail','Territory','Long tail','Covered reactively.', ME_ENTITIES.filter(e=>!ME_ANCHORS.includes(e) && !ME_VERTICAL.includes(e))]
+  ];
+  let html = '';
+  groups.forEach(([cls,badge,title,desc,names])=>{
+    html += `<div class="me-group">
+      <div class="me-group-head"><span class="me-badge ${cls}">${badge}</span><span class="me-group-title">${title}</span></div>
+      <div class="me-group-desc">${desc}</div>`;
+    names.forEach((n,i)=>{
+      const entry = ranked.find(r=>r.name===n) || {name:n, total:0, nichePct:0};
+      html += renderEntityRow(entry, i+1, cls==='anchor'?'t1':cls==='vertical'?'t4':'t3');
+    });
+    html += `</div>`;
+  });
+  document.getElementById('me-groups').innerHTML = html;
+}
+
+function renderFeed(){
+  const active = allTenders.filter(t=>{
+    const s = (t['Status']||'').trim();
+    return s === '' || s.toLowerCase()==='open';
+  });
+  const activeEl = document.getElementById('feed-active');
+  if(active.length===0){
+    activeEl.innerHTML = '<div class="feed-empty">No open tenders in the loaded sheet — every row has a recorded outcome. This likely means your sheet only tracks closed history; connect a live scrape to populate this with genuinely open tenders.</div>';
+  } else {
+    activeEl.innerHTML = active.slice(0,50).map(t=>{
+      const match = isNiche(t['Notice Title']);
+      return `<div class="feed-card ${match?'match':''}">
+        <div><div class="feed-title">${t['Notice Title']||'Untitled'}</div><div class="feed-entity">${titleCase(norm(t['Procuring Entity']))}</div>
+          ${match?'<span class="feed-badge">NICHE MATCH</span>':''}</div>
+        <div class="feed-date">${t['Closing Date']||t['Publish Date']||''}</div>
+      </div>`;
+    }).join('');
+  }
+
+  const upEl = document.getElementById('feed-upcoming');
+  upEl.innerHTML = upcomingTenders.map(t=>{
+    const match = isNiche(t.title);
+    return `<div class="feed-card ${match?'match':''}">
+      <div><div class="feed-title">${t.title}</div><div class="feed-entity">${t.entity}</div>
+        ${match?'<span class="feed-badge">NICHE MATCH</span>':''}</div>
+      <div class="feed-date">${t.date}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('feed-active-count').textContent = active.length;
+  document.getElementById('feed-upcoming-count').textContent = upcomingTenders.length;
+  document.getElementById('feed-match-count').textContent = active.filter(t=>isNiche(t['Notice Title'])).length;
+}
+
+function showView(view){
+  ['national','me','feed','sources'].forEach(v=>{
+    document.getElementById('view-'+v).classList.toggle('active', v===view);
+    document.getElementById('tab-'+v).classList.toggle('active', v===view);
+  });
+}
+
+loadAllSources();
+</script>
+</body>
+</html>
